@@ -9,4 +9,5 @@ Route::get('/about', 'StaticPagesController@about')->name('about');
 
 // 用户注册页-渲染
 Route::get('signup', 'UsersController@create')->name('signup');
-
+// 用户模块
+Route::resource('users', 'UsersController');   //, ['only' => 'show', 'create', 'store']
