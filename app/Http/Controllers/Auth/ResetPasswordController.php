@@ -34,6 +34,7 @@ class ResetPasswordController extends Controller
      */
     public function __construct()
     {
+        session()->flash('success', '恭喜你密码修改成功');
         $this->middleware('guest');
     }
 }
