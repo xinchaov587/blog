@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Mail;
 use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
@@ -13,7 +14,7 @@ class UsersController extends Controller
     {
         // 限制只能访问自己账号对应的资料修改页面
         $this->middleware('auth', [
-            'except' => ['show', 'create', 'store', 'index']
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
         ]);
 
         // 限制已登录用户不能访问注册页面
@@ -50,10 +51,10 @@ class UsersController extends Controller
             'password' => bcrypt($request['password']),
         ]);
 
-        Auth::login($user);
+        $this->sendEmailConfirmationTo($user);
 
-        session()->flash('success', '恭喜你注册成功');
-        return redirect()->route('users.show', [$user]);
+        session()->flash('success', '验证邮件已发送到您的注册邮箱, 请注意查收');
+        return redirect('/');
     }
 
     // 个人资料页-渲染
@@ -97,5 +98,32 @@ class UsersController extends Controller
         $user->delete();
         session()->flash('success', '成功删除用户!');
         return back();
+    }
+
+    protected function sendEmailConfirmationTo($user) {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $name = 'Aufree';
+        $to = $user->email;
+        $subject = "感谢注册 Blog 应用！请确认你的邮箱。";
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
+    }
+
+    //  用户激活
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        echo 'sadfasd';
+        Auth::login($user);
+        session()->flash('success', '恭喜你，激活成功！');
+        return redirect()->route('users.show', [$user]);
     }
 }
